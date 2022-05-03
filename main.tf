@@ -57,13 +57,25 @@ resource "aws_key_pair" "rx9" {
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIv/elDFeDBnAhgz+arIi7Sd/ZTsP3Hdeo/rbdpi7+x3isPlQr57QPiBcpo4GWAP2eFalceU3H5Rde46GGMxcb2woppzuM73DkD0jQzv0bKmAHWI5MPGiT6gzbAlUw6BPYrkKmIpuymMHnI8Q5KwvUj2ooFWFksp6KjbnRxjQ8J2W2bmmE2AHv3PyXtDz+gBMKXhHGrVOC8Ti3fggYhUJ4X3BcezdoHqKt3jTsmWRoRjxXGmwLvGrm3sk7YN3McEr58z+QHJR2CUceQC6wquPsaoJq0b5DN2q64LZP1q7HAeXi2BczL54583+vF2Cf036kw+2IxXxSXvtE0c/OZi1xRL/U95Oh5d4tj4vluvDDNp/rxxMHowJ/9A/yn3ic9QHWUasmRIjebDbLRodjttjD7xZyPTmoalhUfPgcMLMoKmJzRedPj/AGetkJXgN3BbzD4WGHqN63J+lkqdXAzBITJxOufFnOSBpjGmKsF/eMLWzZ4phb4a2I5whQv+i8iCM= phu.nguyen@LAP00231.local"
 }
 
+data "template_file" "user_data_wordpress" {
+  template = file("userdata-wordpress.sh.tpl")
+  vars = {
+  }
+}
+
+data "template_file" "user_data_microservices" {
+  template = file("userdata-microservices.sh.tpl")
+  vars = {
+  }
+}
+
 
 resource "aws_instance" "wordpress" {
   ami             = "ami-04d9e855d716f9c99"
   instance_type   = "t3.micro"
   key_name        = aws_key_pair.rx9.key_name
   security_groups = [aws_security_group.sg_ssh_access.name, aws_security_group.sg_public_http.name]
-  user_data       = file("init-wordpress.sh")
+  user_data       = data.template_file.user_data_wordpress.rendered
 
   tags = {
     Name = "Wordpress"
@@ -75,9 +87,13 @@ resource "aws_instance" "random_logger" {
   instance_type   = "t3.micro"
   key_name        = aws_key_pair.rx9.key_name
   security_groups = [aws_security_group.sg_ssh_access.name, aws_security_group.sg_public_http.name]
-  user_data       = file("init-random-logger.sh")
+  user_data       = data.template_file.user_data_microservices.rendered
 
   tags = {
-    Name = "RandomLogger"
+    Name = "Microservices"
   }
+}
+
+output "wordpress_url" {
+  value = "http://${aws_instance.wordpress.public_ip}"
 }
